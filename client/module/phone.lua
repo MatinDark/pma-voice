@@ -1,44 +1,17 @@
 local callChannel = 0
 
----function createCallThread
----creates a call thread to listen for key presses
-local function createCallThread()
-	CreateThread(function()
-		local changed = false
-		while callChannel ~= 0 do
-			-- check if they're pressing voice keybinds
-			if MumbleIsPlayerTalking(PlayerId()) and not changed then
-				changed = true
-				playerTargets(radioPressed and radioData or {}, callData)
-				TriggerServerEvent('pma-voice:setTalkingOnCall', true)
-			elseif changed and MumbleIsPlayerTalking(PlayerId()) ~= 1 then
-				changed = false
-				MumbleClearVoiceTargetPlayers(voiceTarget)
-				TriggerServerEvent('pma-voice:setTalkingOnCall', false)
-			end
-			Wait(0)
-		end
-	end)
-end
-
 RegisterNetEvent('pma-voice:syncCallData', function(callTable, channel)
 	callData = callTable
-	for tgt, enabled in pairs(callTable) do
+	for tgt, _ in pairs(callTable) do
 		if tgt ~= playerServerId then
-			toggleVoice(tgt, enabled, 'call')
+			toggleVoice(tgt, true, 'call')
 		end
-	end
-end)
-
-RegisterNetEvent('pma-voice:setTalkingOnCall', function(tgt, enabled)
-	if tgt ~= playerServerId then
-		callData[tgt] = enabled
-		toggleVoice(tgt, enabled, 'call')
 	end
 end)
 
 RegisterNetEvent('pma-voice:addPlayerToCall', function(plySource)
-	callData[plySource] = false
+	toggleVoice(plySource, true, 'call')
+	callData[plySource] = true
 end)
 
 RegisterNetEvent('pma-voice:removePlayerFromCall', function(plySource)
@@ -68,7 +41,6 @@ function setCallChannel(channel)
 	sendUIMessage({
 		callInfo = channel
 	})
-	createCallThread()
 end
 
 exports('setCallChannel', setCallChannel)
@@ -87,5 +59,4 @@ end)
 RegisterNetEvent('pma-voice:clSetPlayerCall', function(_callChannel)
 	if GetConvarInt('voice_enableCalls', 1) ~= 1 then return end
 	callChannel = _callChannel
-	createCallThread()
 end)
